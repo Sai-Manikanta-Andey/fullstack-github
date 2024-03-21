@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import Search from '../components/Search'
 import SortRepos from '../components/SortRepos'
 import ProfileInfo from "../components/ProfileInfo";
@@ -12,44 +12,64 @@ const Homepage = () => {
   const [loading,setLoading] =useState(false)
   const [sortType,setsortType] = useState("recent")
   
-  const getUserProfile=async ()=>{
-    setLoading(true)
+
+  
+  const getUserProfile = async (username = "Sai-Manikanta-Andey") => {
+    setLoading(true);
     try {
       const res = await fetch(
-        "https://api.github.com/users/Sai-Manikanta-Andey"
+        `https://api.github.com/users/${username}`
       );
-      const userData =await res.json();
-      setUser(userData)
+      const userData = await res.json();
+      setUser(userData);
 
       const repos = await fetch(
-        "https://api.github.com/users/Sai-Manikanta-Andey/repos"
+        `https://api.github.com/users/${username}/repos`
       );
 
-      const reposData = await repos.json()
-      setRepos(reposData)
-      console.log("user:",userData);
-      console.log("repos:",reposData);
+      const reposData = await repos.json();
+      setRepos(reposData);
+      console.log("user:", userData);
+      console.log("repos:", reposData);
+      return {userData,reposData}
     } catch (error) {
-      toast.error("Failed to fetch")
-    }finally{
-      setLoading(false)
+      toast.error("Failed to fetch");
+    } finally {
+      setLoading(false);
     }
-  }
+  };
   
   useEffect(()=>{
     getUserProfile()
   },[])
   
+  const onSearch = async (e,username)=>{
+    e.preventDefault()
+    setLoading(true)
+    setRepos([])
+    setUser(null)
+   const {userData,reposData}=  await getUserProfile(username)
+   setUser(userData)
+   setRepos(reposData)
+  }
+  
   return (
     <div className="m-4 ">
-      <Search />
-      <SortRepos />
-      <div className="flex flex-col items-start justify-center gap-4 md:flex-row">
-        {user && !loading && <ProfileInfo userProfile={user} />}
-        {repos.length > 0 && !loading && <Repos repos={repos} />}
+      {user?.message === "Not Found" ? (
+        <p className='font-bold text-center'>User not found</p>
+      ) : (
+        <>
+          {" "}
+          <Search onSearch={onSearch} />
+          <SortRepos />
+          <div className="flex flex-col items-start justify-center gap-4 md:flex-row">
+            {user && !loading && <ProfileInfo userProfile={user} />}
+            { !loading && <Repos repos={repos} />}
 
-        {loading && <Spinner />}
-      </div>
+            {loading && <Spinner />}
+          </div>
+        </>
+      )}
     </div>
   );
 }
